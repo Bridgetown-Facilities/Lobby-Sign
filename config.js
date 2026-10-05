@@ -3,7 +3,7 @@
 window.LOBBY_SIGN = {
   // The Apps Script web app address (Deploy > Manage deployments > Web app URL).
   // It only hands out today's events tagged "Lobby Sign", so it is not a secret.
-  dataUrl: "",
+  dataUrl: "https://script.google.com/macros/s/AKfycbxmEiZZVnqcyYw3s79GmRrmNPIgtbVEmlTjZqAslVK8w4-fivuQPkLzGyN-e4felwZa/exec",
 
   // How often the TV checks Planning Center for changes.
   refreshMinutes: 2,
@@ -21,6 +21,7 @@ window.LOBBY_SIGN = {
     { room: "Forest", arrow: 8 },
     { room: "Tilikum", arrow: 8 },
     { room: "Prayer Room", arrow: 8 },
+    { room: "Kids Check-In Lobby", arrow: 8 },
     { room: "Broadway", arrow: 8 },
     { room: "Burnside", arrow: 8 },
     { room: "Council Crest", arrow: 8 },
