@@ -8,7 +8,7 @@ window.LOBBY_SIGN = {
   // How often the TV checks Planning Center for changes.
   refreshMinutes: 2,
 
-  // Arrow numbers match the Arrow Key (open the sign with #key on the end of the address to see it):
+  // Arrow numbers match the Arrow Key (add ?key to the end of the sign's address to see it):
   //  1 Straight Ahead    2 Ahead Left    3 Ahead Right    4 Left    5 Right
   //  6 Ahead, Then Left  7 Ahead, Then Right  8 Down Left  9 Down Right  10 Down
   // "room" must match the room name in Planning Center (capitals, periods and apostrophes don't matter).

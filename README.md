@@ -10,7 +10,7 @@ Add the **Lobby Sign** tag (tag group: Signage) to the event in Planning Center 
 
 ## Changing an arrow or a room name
 
-Edit `config.js`. Each room has an arrow number and an optional shorter name for the sign. Open the sign with `#key` at the end of its address to see all ten arrows with their numbers. Open it with `#sample` to see two sample events, which is handy for testing the TV.
+Edit `config.js`. Each room has an arrow number and an optional shorter name for the sign. Add `?key` to the end of the sign's address to see all ten arrows with their numbers. Add `?sample` to see two sample events, which is handy for testing the TV.
 
 | # | Arrow |
 |---|---|
