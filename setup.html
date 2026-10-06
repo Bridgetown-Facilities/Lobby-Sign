@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Sign Builder</title>
+<style>
+/* A plain tool page: pick what a screen is for, see it, open it. */
+:root {
+  --bg: #FFFFFF;
+  --text: #000000;
+  --muted: #5C5E61;
+  --line: #E2E3E4;
+  --field: #F4F4F5;
+  --accent: #000000;
+  --accent-text: #FFFFFF;
+  --font: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #000000; --text: #FFFFFF; --muted: #A3A5A8; --line: #3E3E3E; --field: #1C1C1D; --accent: #FFFFFF; --accent-text: #000000; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 17px; line-height: 1.4; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 32px 20px 64px; }
+h1 { font-size: 34px; margin: 0 0 4px; letter-spacing: -0.01em; }
+.lede { color: var(--muted); margin: 0 0 28px; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-gap: 32px; gap: 32px; align-items: start; }
+@media (max-width: 820px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+fieldset { border: 0; margin: 0 0 24px; padding: 0; min-width: 0; }
+legend, .label { font-weight: 700; font-size: 17px; margin-bottom: 10px; padding: 0; }
+.choices { display: grid; grid-gap: 8px; gap: 8px; }
+.choice { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; }
+.choice input { margin-top: 3px; width: 20px; height: 20px; flex: none; accent-color: var(--accent); }
+.choice b { display: block; }
+.choice span { color: var(--muted); font-size: 15px; }
+.choice.is-on { border-color: var(--text); }
+.rooms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-gap: 6px 16px; gap: 6px 16px; }
+.rooms label { display: flex; gap: 10px; align-items: center; padding: 6px 0; cursor: pointer; }
+.rooms input { width: 20px; height: 20px; accent-color: var(--accent); }
+select, input[type="text"] {
+  width: 100%; font: inherit; color: var(--text); background: var(--field);
+  border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px;
+}
+.hint { color: var(--muted); font-size: 15px; margin: 6px 0 0; }
+.preview-box { position: relative; width: 100%; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
+.preview-box iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+.wide { padding-top: 56.25%; }
+.tall { padding-top: 133.33%; max-width: 420px; }
+.result { margin-top: 16px; }
+.link { word-break: break-all; font-size: 15px; background: var(--field); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; -webkit-user-select: all; user-select: all; }
+.buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.btn { display: inline-block; font: inherit; font-weight: 700; text-decoration: none; padding: 13px 20px; border-radius: 10px; border: 1px solid var(--text); background: var(--bg); color: var(--text); cursor: pointer; }
+.btn.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.btn:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--muted); outline-offset: 2px; }
+.check { display: flex; gap: 10px; align-items: center; margin-top: 12px; font-size: 15px; color: var(--muted); }
+.steps { margin: 28px 0 0; padding: 20px 20px 4px; border: 1px solid var(--line); border-radius: 12px; }
+.steps h2 { font-size: 20px; margin: 0 0 10px; }
+.steps ol { margin: 0 0 16px; padding-left: 22px; }
+.steps li { margin-bottom: 8px; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Sign Builder</h1>
+  <p class="lede">Pick what a screen is for, check the preview, then open the sign on that screen.</p>
+
+  <div class="layout">
+    <form id="form" autocomplete="off">
+      <fieldset>
+        <legend>What Is This Screen For?</legend>
+        <div class="choices" id="views">
+          <label class="choice"><input type="radio" name="view" value="list" id="view-list" checked>
+            <div><b>Lobby</b><span>Every tagged event today, with arrows from the main entrance.</span></div></label>
+          <label class="choice"><input type="radio" name="view" value="hallway" id="view-hallway">
+            <div><b>Hallway</b><span>Only the rooms you pick, pointing the way from where this screen stands.</span></div></label>
+          <label class="choice"><input type="radio" name="view" value="door" id="view-door">
+            <div><b>Door</b><span>One room: what's in it now, then what's next.</span></div></label>
+        </div>
+      </fieldset>
+
+      <fieldset id="rooms-many" hidden>
+        <legend>Which Rooms?</legend>
+        <div class="rooms" id="rooms-checks"></div>
+      </fieldset>
+
+      <fieldset id="rooms-one" hidden>
+        <legend>Which Room?</legend>
+        <select id="room-select" aria-label="Room"></select>
+      </fieldset>
+
+      <fieldset id="arrow-set">
+        <label class="label" for="arrow-select">Arrow</label>
+        <select id="arrow-select"></select>
+        <p class="hint" id="arrow-hint">The lobby arrows point from the main entrance. A hallway screen usually needs its own.</p>
+      </fieldset>
+
+      <fieldset>
+        <label class="label" for="theme-select">Look</label>
+        <select id="theme-select"></select>
+      </fieldset>
+
+      <fieldset>
+        <label class="label" for="title-input">Custom Text (Optional)</label>
+        <input type="text" id="title-input" placeholder="Shows this instead of Planning Center events">
+        <p class="hint">For something that isn't in Planning Center. Leave it blank to use tagged events.</p>
+      </fieldset>
+    </form>
+
+    <div>
+      <div class="label">Preview</div>
+      <div class="preview-box wide" id="preview-box"><iframe id="preview" title="Sign preview"></iframe></div>
+      <label class="check"><input type="checkbox" id="sample-check"> Preview with sample events</label>
+
+      <div class="result">
+        <div class="label">This Sign's Address</div>
+        <div class="link" id="link"></div>
+        <div class="buttons">
+          <a class="btn primary" id="open" href="./">Open This Sign</a>
+          <button class="btn" type="button" id="copy">Copy Address</button>
+        </div>
+      </div>
+
+      <div class="steps">
+        <h2>Setting Up an iPad</h2>
+        <ol>
+          <li>Open this page on the iPad in Safari, make your choices, and tap <b>Open This Sign</b>.</li>
+          <li>Tap the <b>Share</b> button, then <b>Add to Home Screen</b>. Name it after its spot, like "Forest Door," and tap <b>Add</b>.</li>
+          <li>Open the sign from its new Home Screen icon. It fills the screen with no Safari bars.</li>
+          <li>Lock it to the sign with Guided Access: triple-click the Home button (or the top button on iPads without one) and tap <b>Start</b>.</li>
+          <li>Plug it in. The sign stays current on its own.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  var CFG = window.LOBBY_SIGN || { rooms: [], themes: {} };
+  var ARROW_LABELS = ["", "Straight Ahead", "Ahead Left", "Ahead Right", "Left", "Right",
+    "Ahead, Then Left", "Ahead, Then Right", "Down Left", "Down Right", "Down"];
+  var base = location.href.replace(/[?#].*$/, "").replace(/setup\.html$/, "");
+
+  var form = document.getElementById("form");
+  var roomChecks = document.getElementById("rooms-checks");
+  var roomSelect = document.getElementById("room-select");
+  var arrowSelect = document.getElementById("arrow-select");
+  var themeSelect = document.getElementById("theme-select");
+  var titleInput = document.getElementById("title-input");
+  var sampleCheck = document.getElementById("sample-check");
+  var preview = document.getElementById("preview");
+  var previewBox = document.getElementById("preview-box");
+  var linkEl = document.getElementById("link");
+  var openEl = document.getElementById("open");
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function today() {
+    try {
+      var y, m, d;
+      new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit" })
+        .formatToParts(new Date()).forEach(function (p) { if (p.type === "year") y = p.value; if (p.type === "month") m = p.value; if (p.type === "day") d = p.value; });
+      if (y) return y + "-" + m + "-" + d;
+    } catch (err) {}
+    var n = new Date(); return n.getFullYear() + "-" + pad(n.getMonth() + 1) + "-" + pad(n.getDate());
+  }
+
+  // Rooms
+  (CFG.rooms || []).forEach(function (r, i) {
+    var name = r.show || r.room;
+    roomChecks.insertAdjacentHTML("beforeend",
+      '<label><input type="checkbox" name="room" value="' + esc(r.room) + '" id="room-' + i + '"> ' + esc(name) + "</label>");
+    roomSelect.insertAdjacentHTML("beforeend", '<option value="' + esc(r.room) + '">' + esc(name) + "</option>");
+  });
+
+  // Arrows
+  arrowSelect.insertAdjacentHTML("beforeend", '<option value="">Each room\'s arrow from the main entrance</option>');
+  for (var a = 1; a <= 10; a++) arrowSelect.insertAdjacentHTML("beforeend", '<option value="' + a + '">' + a + ". " + ARROW_LABELS[a] + "</option>");
+  arrowSelect.insertAdjacentHTML("beforeend", '<option value="none">No arrow</option>');
+
+  // Looks
+  var themes = CFG.themes || {};
+  var todays = (CFG.themeByDate || {})[today()] || CFG.defaultTheme;
+  var todaysLabel = themes[todays] ? themes[todays].label : "";
+  themeSelect.insertAdjacentHTML("beforeend", '<option value="">Today\'s look' + (todaysLabel ? " (" + esc(todaysLabel) + ")" : "") + "</option>");
+  Object.keys(themes).forEach(function (k) {
+    themeSelect.insertAdjacentHTML("beforeend", '<option value="' + esc(k) + '">' + esc(themes[k].label || k) + " (always)</option>");
+  });
+
+  function currentView() {
+    var v = "list";
+    Array.prototype.forEach.call(form.querySelectorAll('input[name="view"]'), function (r) {
+      if (r.checked) v = r.value;
+      r.parentNode.className = "choice" + (r.checked ? " is-on" : "");
+    });
+    return v;
+  }
+
+  function buildQuery(withSample) {
+    var v = currentView();
+    var q = [];
+    if (v === "door") q.push("room=" + encodeURIComponent(roomSelect.value));
+    if (v === "hallway") {
+      var picked = [];
+      Array.prototype.forEach.call(roomChecks.querySelectorAll("input:checked"), function (c) { picked.push(c.value); });
+      if (picked.length) q.push("rooms=" + encodeURIComponent(picked.join(",")));
+    }
+    if (v !== "door" && arrowSelect.value) q.push("arrow=" + encodeURIComponent(arrowSelect.value));
+    if (themeSelect.value) q.push("theme=" + encodeURIComponent(themeSelect.value));
+    var t = titleInput.value.replace(/^\s+|\s+$/g, "");
+    if (t) q.push("title=" + encodeURIComponent(t));
+    if (withSample) q.push("sample");
+    return q.length ? "?" + q.join("&") : "";
+  }
+
+  var previewTimer;
+  function update() {
+    var v = currentView();
+    document.getElementById("rooms-many").hidden = v !== "hallway";
+    document.getElementById("rooms-one").hidden = v !== "door";
+    document.getElementById("arrow-set").hidden = v === "door";
+    document.getElementById("arrow-hint").hidden = v !== "hallway";
+    previewBox.className = "preview-box " + (v === "list" ? "wide" : "tall");
+
+    var url = base + buildQuery(false);
+    linkEl.textContent = url;
+    openEl.href = url;
+
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(function () { preview.src = base + buildQuery(sampleCheck.checked); }, 250);
+  }
+
+  form.addEventListener("change", update);
+  form.addEventListener("input", update);
+  sampleCheck.addEventListener("change", update);
+
+  document.getElementById("copy").addEventListener("click", function () {
+    var text = linkEl.textContent, btn = this;
+    function done() { btn.textContent = "Copied"; setTimeout(function () { btn.textContent = "Copy Address"; }, 1600); }
+    function fallback() {
+      var r = document.createRange(); r.selectNodeContents(linkEl);
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      try { document.execCommand("copy"); done(); } catch (err) {}
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+    else fallback();
+  });
+
+  update();
+})();
+</script>
+</body>
+</html>

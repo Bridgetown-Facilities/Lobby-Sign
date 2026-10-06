@@ -2,13 +2,23 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sign" id="app-title">
+<link rel="apple-touch-icon" href="assets/bridgetown-icon.png">
 <title>Lobby Wayfinding Sign</title>
-<style>
-/* The Apr 13 wayfinding slide, made live. Black field, bold white names with line arrows beside them,
-   "time | room" underneath, the icon in the bottom right corner. The grid picks one or two columns
-   and the type sizes itself to fill the screen for however many tagged events are left today. */
+<style id="css">
+/* One sign, several jobs. The address picks the job:
+     (nothing)          every tagged event today, for the lobby TV
+     ?rooms=A,B         only events in those rooms, for a hallway screen
+     ?arrow=4           one arrow for everything on this screen (hallway screens point from where they stand)
+     ?room=Forest       a door sign: what's in this room now, then what's next
+     ?title=Text        show this text instead of Planning Center events
+     ?theme=ptw         a host organization's look instead of today's default
+   The layout picks one or two columns and sizes the type to fill whatever screen it's on. */
 @font-face {
   font-family: "Sign Sans";
   src: local("HelveticaNeue-Bold"), local("Helvetica Neue Bold"),
@@ -18,23 +28,29 @@
   font-display: block;
 }
 :root {
-  --black: #000000;    /* Brand Black */
-  --white: #FFFFFF;    /* Brand White */
-  --grey: #E2E3E4;     /* Brand Light Grey */
-  --dim: #8E9093;      /* Light Grey stepped down, status line only */
-  --sans: "Sign Sans", Arial, sans-serif;
-  color-scheme: dark;
+  --bg: #000000;
+  --text: #FFFFFF;
+  --detail: #E2E3E4;
+  --quiet: #8E9093;
+  --font: "Sign Sans", Arial, sans-serif;
+  --name-weight: 700;
+  --detail-weight: 700;
+  --detail-size: 1;
 }
 html, body { height: 100%; }
 body {
   margin: 0;
-  background: var(--black);
-  color: var(--white);
-  font-family: var(--sans);
-  font-weight: 700;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-weight: var(--name-weight);
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
   cursor: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 [hidden] { display: none !important; }
 
@@ -44,6 +60,10 @@ body {
   height: 100%;
   padding: 8.5vh 12.4vw 8.5vh 5.6vw;
 }
+.mark-left .sign { padding: 8.5vh 5.6vw 16vh 5.6vw; }
+.view-door .sign { padding: 12vh 12.4vw 16vh 12.4vw; }
+
+/* Event list */
 .board {
   height: 100%;
   display: grid;
@@ -65,19 +85,41 @@ body {
   min-height: 0;
   overflow: hidden;
 }
-.arrow { display: block; width: 0.92em; height: 0.92em; margin-top: 0.05em; color: var(--white); }
+.arrow { display: block; width: 0.92em; height: 0.92em; margin-top: 0.05em; color: var(--text); }
+.arrow-above .item, .no-arrows .item { display: block; }
+.arrow-above .arrow { width: 1.25em; height: 1.25em; margin: 0 0 0.32em -0.04em; }
+.no-arrows .arrow { display: none; }
 .text { min-width: 0; }
 .name { line-height: 1.06; letter-spacing: -0.005em; text-wrap: balance; }
-.sub { margin-top: 0.12em; font-size: 0.6em; line-height: 1.15; color: var(--grey); }
-.where { margin-top: 0.1em; line-height: 1.06; color: var(--grey); white-space: nowrap; }
-
-.icon {
-  position: absolute;
-  right: 5.6vw;
-  bottom: 8.5vh;
-  height: 13.5vh;
-  width: auto;
+.sub { margin-top: 0.12em; font-size: 0.6em; line-height: 1.15; color: var(--detail); font-weight: var(--detail-weight); }
+.where {
+  margin-top: 0.12em;
+  font-size: calc(var(--detail-size) * 1em);
+  line-height: 1.1;
+  color: var(--detail);
+  font-weight: var(--detail-weight);
+  white-space: nowrap;
 }
+.arrow-above .where { margin-top: 0.3em; }
+
+/* Door sign */
+.door {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  font-size: var(--fs, 80px);
+}
+.door-inner { max-width: 100%; }
+.door-label { font-size: 0.3em; font-weight: 700; margin-bottom: 0.5em; }
+.door-name { line-height: 1.06; letter-spacing: -0.005em; text-wrap: balance; }
+.door-sub { margin-top: 0.15em; font-size: 0.5em; line-height: 1.15; color: var(--detail); font-weight: var(--detail-weight); }
+.door-time { margin-top: 0.55em; font-size: 0.4em; color: var(--detail); font-weight: var(--detail-weight); }
+.door-next { margin-top: 1.6em; font-size: 0.24em; color: var(--quiet); font-weight: var(--detail-weight); }
+
+/* Nothing left today */
 .welcome {
   height: 100%;
   display: flex;
@@ -86,35 +128,41 @@ body {
 }
 .welcome p { margin: 0; font-size: 10vh; line-height: 1.04; letter-spacing: -0.005em; }
 
-.status {
-  position: absolute;
-  left: 5.6vw;
-  bottom: 3vh;
-  font-size: 1.9vh;
-  color: var(--dim);
+/* The host's mark */
+.icon { position: absolute; right: 5.6vw; bottom: 8.5vh; height: 13.5vh; width: auto; }
+.mark-text { position: absolute; left: 5.6vw; bottom: 7.5vh; font-size: 2.7vh; font-weight: 700; color: var(--text); }
+
+.status { position: absolute; left: 5.6vw; bottom: 2.6vh; font-size: 1.9vh; color: var(--quiet); font-weight: var(--detail-weight); }
+
+/* iPads and other screens standing on end */
+@media (orientation: portrait) {
+  .sign, .mark-left .sign { padding: 7vh 8vw 15vh 8vw; }
+  .view-door .sign { padding: 9vh 8vw 15vh 8vw; }
+  .icon { right: 8vw; bottom: 5vh; height: 9vh; }
+  .mark-text { left: 8vw; bottom: 5.5vh; font-size: 2.2vh; }
+  .status { left: 8vw; bottom: 2vh; font-size: 1.6vh; }
+  .welcome p { font-size: 7vh; }
 }
 </style>
 </head>
 <body>
 <main class="sign" id="sign">
   <div class="board" id="board" aria-live="polite"></div>
-  <div class="welcome" id="welcome" hidden>
-    <p>In Portland</p>
-    <p>as it is</p>
-    <p>in Heaven.</p>
-  </div>
-  <img class="icon" alt="Bridgetown Church" src="assets/bridgetown-icon.png">
+  <div class="door" id="door" aria-live="polite" hidden></div>
+  <div class="welcome" id="welcome" hidden></div>
+  <img class="icon" id="mark-image" alt="" hidden>
+  <span class="mark-text" id="mark-text" hidden></span>
   <span class="status" id="status" hidden></span>
 </main>
 
 <script src="config.js"></script>
-<script>
+<script id="app">
 (function () {
-  var CFG = window.LOBBY_SIGN || { rooms: [] };
   var TIME_ZONE = "America/Los_Angeles";
   var PER_PAGE = 8;
   var PAGE_SECONDS = 10;
   var STALE_MINUTES = 15;
+  var CHECK_MINUTES = 5;
   var STORE_KEY = "lobbySign.lastData";
 
   // Arrow numbers from config.js. Straight arrows are one shape rotated; turn arrows have their own path.
@@ -132,29 +180,182 @@ body {
     10: { label: "Down", angle: 90 }
   };
 
-  var board = document.getElementById("board");
-  var welcome = document.getElementById("welcome");
-  var statusEl = document.getElementById("status");
+  var el = {
+    board: document.getElementById("board"),
+    door: document.getElementById("door"),
+    welcome: document.getElementById("welcome"),
+    markImage: document.getElementById("mark-image"),
+    markText: document.getElementById("mark-text"),
+    status: document.getElementById("status"),
+    appTitle: document.getElementById("app-title")
+  };
+  var cssSource = document.getElementById("css").textContent;
+  var appSource = document.getElementById("app").textContent;
 
-  // Test modes for the TV: add ?sample or ?key to the address (#sample and #key work too).
-  function readMode() {
-    var m = (location.hash || "").replace("#", "") || (location.search || "").replace("?", "").split(/[&=]/)[0];
-    return m === "key" || m === "sample" ? m : "";
-  }
-  var mode = readMode();
+  var opts = readOptions();
+  var mode = has("key") ? "key" : has("sample") ? "sample" : "";
+  var view = opts.room ? "door" : "list";
+  var roomsFilter = (opts.rooms || "").split(",").map(trim).filter(Boolean);
+  var customTitle = trim(opts.title || "");
+  var arrowOverride = readArrow(opts.arrow);
+
+  var CFG = window.LOBBY_SIGN || { rooms: [], themes: {} };
+  var configText = null;
+  var THEME = {};
+  var THEME_KEY = "";
+  var ROOM_LOOKUP = {};
   var data = null;
   var lastGood = 0;
   var pages = [];
   var pageIndex = 0;
 
+  /* ---------- Small helpers ---------- */
+
+  function trim(s) { return String(s || "").replace(/^\s+|\s+$/g, ""); }
   function norm(s) { return String(s || "").toLowerCase().replace(/[^a-z0-9]/g, ""); }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function has(k) { return Object.prototype.hasOwnProperty.call(opts, k); }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
 
-  var ROOM_LOOKUP = {};
-  (CFG.rooms || []).forEach(function (r) { ROOM_LOOKUP[norm(r.room)] = r; });
+  function readOptions() {
+    var o = {};
+    function add(pair) {
+      if (!pair) return;
+      var i = pair.indexOf("=");
+      var k = i === -1 ? pair : pair.slice(0, i);
+      var v = i === -1 ? "" : pair.slice(i + 1);
+      try { k = decodeURIComponent(k.replace(/\+/g, " ")); v = decodeURIComponent(v.replace(/\+/g, " ")); } catch (err) {}
+      o[k.toLowerCase()] = v;
+    }
+    (location.search || "").replace(/^\?/, "").split("&").forEach(add);
+    (location.hash || "").replace(/^#/, "").split("&").forEach(add);
+    return o;
+  }
 
-  // Match a Planning Center room name to config.js: exact first, then "contains" (e.g. "Classroom: Broadway").
-  function roomInfo(pcoName) {
-    var n = norm(pcoName);
+  function readArrow(v) {
+    if (v === undefined || v === "") return null;
+    if (String(v).toLowerCase() === "none" || v === "0") return 0;
+    var n = parseInt(v, 10);
+    return ARROWS[n] ? n : null;
+  }
+
+  function get(url, cb) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url + (url.indexOf("?") === -1 ? "?" : "&") + "v=" + Date.now(), true);
+    xhr.timeout = 30000;
+    xhr.onload = function () { cb(xhr.status >= 200 && xhr.status < 300 ? xhr.responseText : null); };
+    xhr.onerror = xhr.ontimeout = function () { cb(null); };
+    xhr.send();
+  }
+
+  /* ---------- Time, always in Portland ---------- */
+
+  function clock(date) {
+    var h, m;
+    try {
+      new Intl.DateTimeFormat("en-US", { timeZone: TIME_ZONE, hour: "numeric", minute: "2-digit", hour12: false })
+        .formatToParts(date).forEach(function (p) {
+          if (p.type === "hour") h = Number(p.value) % 24;
+          if (p.type === "minute") m = Number(p.value);
+        });
+    } catch (err) {}
+    if (h === undefined || isNaN(h)) { h = date.getHours(); m = date.getMinutes(); }
+    var hh = h % 12 || 12;
+    return { t: m ? hh + ":" + pad(m) : String(hh), ap: h < 12 ? "AM" : "PM", h: h };
+  }
+  // Brand Guide time format: "6:30 PM", "2 PM", "6:30 - 8 PM".
+  function formatTime(date) { var c = clock(date); return c.t + " " + c.ap; }
+  function formatRange(s, e) {
+    var a = clock(s), b = clock(e);
+    return a.ap === b.ap ? a.t + " - " + b.t + " " + b.ap : a.t + " " + a.ap + " - " + b.t + " " + b.ap;
+  }
+  function todayKey() {
+    try {
+      var y, mo, d;
+      new Intl.DateTimeFormat("en-US", { timeZone: TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" })
+        .formatToParts(new Date()).forEach(function (p) {
+          if (p.type === "year") y = p.value;
+          if (p.type === "month") mo = p.value;
+          if (p.type === "day") d = p.value;
+        });
+      if (y && mo && d) return y + "-" + mo + "-" + d;
+    } catch (err) {}
+    var n = new Date();
+    return n.getFullYear() + "-" + pad(n.getMonth() + 1) + "-" + pad(n.getDate());
+  }
+
+  /* ---------- Settings and looks ---------- */
+
+  function useConfig(cfg) {
+    CFG = cfg || { rooms: [], themes: {} };
+    ROOM_LOOKUP = {};
+    (CFG.rooms || []).forEach(function (r) { ROOM_LOOKUP[norm(r.room)] = r; });
+    applyTheme(pickTheme());
+  }
+
+  function pickTheme() {
+    var themes = CFG.themes || {};
+    var key = String(opts.theme || "").toLowerCase();
+    if (!themes[key]) key = (CFG.themeByDate || {})[todayKey()];
+    if (!themes[key]) key = CFG.defaultTheme;
+    if (!themes[key]) key = Object.keys(themes)[0] || "";
+    return key;
+  }
+
+  function applyTheme(key) {
+    THEME_KEY = key;
+    THEME = (CFG.themes || {})[key] || {};
+    var s = document.documentElement.style;
+    s.setProperty("--bg", THEME.background || "#000000");
+    s.setProperty("--text", THEME.text || "#FFFFFF");
+    s.setProperty("--detail", THEME.detail || THEME.text || "#FFFFFF");
+    s.setProperty("--quiet", THEME.quiet || THEME.detail || "#8E9093");
+    s.setProperty("--font", THEME.font || "Arial, sans-serif");
+    s.setProperty("--name-weight", String(THEME.nameWeight || 700));
+    s.setProperty("--detail-weight", String(THEME.detailWeight || THEME.nameWeight || 700));
+    s.setProperty("--detail-size", String(THEME.detailSize || 1));
+
+    var markLeft = !THEME.markImage && !!THEME.markText;
+    document.body.className = ["view-" + view, THEME.arrowAbove ? "arrow-above" : "",
+      markLeft ? "mark-left" : "", arrowOverride === 0 ? "no-arrows" : ""].join(" ");
+
+    if (THEME.markImage) { el.markImage.src = THEME.markImage; el.markImage.alt = THEME.label || ""; }
+    el.markImage.hidden = !THEME.markImage;
+    el.markText.textContent = THEME.markText || "";
+    el.markText.hidden = !THEME.markText;
+
+    el.welcome.innerHTML = (THEME.emptyLines || []).map(function (l) { return "<p>" + esc(l) + "</p>"; }).join("");
+
+    var name = view === "door" ? roomDisplay(opts.room) : customTitle || (roomsFilter.length ? "Hallway" : "Lobby");
+    document.title = name + " Sign";
+    if (el.appTitle) el.appTitle.setAttribute("content", name);
+
+    if (THEME.fontCss && !document.getElementById("font-" + key)) {
+      var link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = THEME.fontCss;
+      link.id = "font-" + key;
+      link.onload = refitSoon;
+      document.head.appendChild(link);
+    }
+  }
+
+  function refitSoon() {
+    setTimeout(draw, 60);
+    setTimeout(draw, 900);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+  }
+  if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener("loadingdone", draw);
+
+  /* ---------- Rooms ---------- */
+
+  // Match a Planning Center room name to config.js: exact first, then "contains" (e.g. "Tilikum (Lounge)").
+  function roomInfo(name) {
+    var n = norm(name);
     if (ROOM_LOOKUP[n]) return ROOM_LOOKUP[n];
     var best = null;
     for (var k in ROOM_LOOKUP) {
@@ -162,33 +363,90 @@ body {
     }
     return best;
   }
-
-  function esc(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  function roomDisplay(name) {
+    var info = roomInfo(name);
+    return info ? (info.show || info.room) : String(name || "");
+  }
+  function roomMatches(pcoName, wanted) {
+    var a = norm(pcoName), b = norm(wanted);
+    if (!b) return false;
+    if (a === b || a.indexOf(b) !== -1) return true;
+    var info = roomInfo(pcoName);
+    return !!(info && norm(info.room) === b);
+  }
+  function inRooms(e, wanted) {
+    return (e.rooms || []).some(function (r) {
+      return wanted.some(function (w) { return roomMatches(r, w); });
     });
   }
 
-  // Brand Guide time format: "6:30 PM", "2 PM". Always in Portland time.
-  function formatTime(date) {
-    var h, m;
-    try {
-      var parts = new Intl.DateTimeFormat("en-US", { timeZone: TIME_ZONE, hour: "numeric", minute: "2-digit", hour12: false }).formatToParts(date);
-      parts.forEach(function (p) { if (p.type === "hour") h = Number(p.value) % 24; if (p.type === "minute") m = Number(p.value); });
-    } catch (err) {}
-    if (h === undefined || isNaN(h)) { h = date.getHours(); m = date.getMinutes(); }
-    var ap = h < 12 ? "AM" : "PM";
-    var hh = h % 12 || 12;
-    return (m ? hh + ":" + (m < 10 ? "0" : "") + m : String(hh)) + " " + ap;
+  /* ---------- Events ---------- */
+
+  // A host's name is already on the sign, so "Practicing the Way: Giver Gathering" reads "Giver Gathering".
+  function cleanName(name) {
+    var out = String(name || "");
+    (THEME.removeFromNames || []).forEach(function (s) {
+      if (!s) return;
+      var e = s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      out = out.replace(new RegExp("^\\s*" + e + "\\s*[|:\\-\\u2013\\u2014]+\\s*", "i"), "")
+               .replace(new RegExp("\\s*[|:\\-\\u2013\\u2014]+\\s*" + e + "\\s*$", "i"), "");
+    });
+    return trim(out) || String(name || "");
   }
+  function splitName(e) {
+    if (e.custom) return { main: e.name, sub: "" };
+    var n = cleanName(e.name), i = n.indexOf(" | ");
+    return i === -1 ? { main: n, sub: "" } : { main: n.slice(0, i), sub: n.slice(i + 3) };
+  }
+  function eventArrow(e) {
+    if (arrowOverride !== null) return arrowOverride;
+    var a = null;
+    (e.rooms || []).forEach(function (r) {
+      var info = roomInfo(r);
+      if (a === null && info && info.arrow) a = info.arrow;
+    });
+    return a;
+  }
+  function eventRooms(e) {
+    var shown = [];
+    (e.rooms || []).forEach(function (r) {
+      var d = roomDisplay(r);
+      if (shown.indexOf(d) === -1) shown.push(d);
+    });
+    return shown.join(" & ");
+  }
+
+  function sampleEvents() {
+    var now = Date.now(), min = 60000;
+    function at(offset) { return new Date(now + offset * min).toISOString(); }
+    return [
+      { name: "Living Waters", start: at(-15), end: at(75), rooms: ["Hospitality Room"] },
+      { name: "Bread & Wine | Songsharing Night", start: at(30), end: at(120), rooms: ["Forest"] },
+      { name: "Prayer Night", start: at(135), end: at(210), rooms: ["Forest"] }
+    ];
+  }
+
+  function upcoming() {
+    if (customTitle) return [{ name: customTitle, custom: true, rooms: opts.room ? [opts.room] : roomsFilter }];
+    var list = mode === "sample" ? sampleEvents() : (data && data.events) || [];
+    var now = Date.now();
+    list = list
+      .filter(function (e) { return e && e.name && Date.parse(e.end) > now; })
+      .sort(function (a, b) { return (Date.parse(a.start) - Date.parse(b.start)) || a.name.localeCompare(b.name); });
+    if (view === "door") return list.filter(function (e) { return inRooms(e, [opts.room]); });
+    if (roomsFilter.length) return list.filter(function (e) { return inRooms(e, roomsFilter); });
+    return list;
+  }
+
+  /* ---------- Drawing ---------- */
 
   function arrowSvg(num) {
     var a = ARROWS[num];
-    if (!a) return '<span class="arrow" aria-hidden="true"></span>';
+    if (!a) return THEME.arrowAbove ? "" : '<span class="arrow" aria-hidden="true"></span>';
     var turn = a.path ? "" : ' transform="rotate(' + a.angle + ' 50 50)"';
     return '<svg class="arrow" viewBox="0 0 100 100" aria-hidden="true"><g' + turn + ">" +
-      '<path d="' + (a.path || STRAIGHT) + '" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="square" stroke-linejoin="miter"/>' +
-      "</g></svg>";
+      '<path d="' + (a.path || STRAIGHT) + '" fill="none" stroke="currentColor" stroke-width="' + (THEME.arrowWeight || 9) +
+      '" stroke-linecap="square" stroke-linejoin="miter"/></g></svg>';
   }
 
   function itemHtml(e) {
@@ -196,34 +454,23 @@ body {
       return '<div class="item">' + arrowSvg(e.arrow) + '<div class="text"><div class="name">' + esc(e.label) +
         '</div><div class="where">Arrow ' + e.arrow + "</div></div></div>";
     }
-    var arrow = null, shown = [];
-    (e.rooms || []).forEach(function (r) {
-      var info = roomInfo(r);
-      if (info && arrow === null && info.arrow) arrow = info.arrow;
-      shown.push(info ? (info.show || info.room) : r);
-    });
-    var split = e.name.indexOf(" | ");
-    var main = split === -1 ? e.name : e.name.slice(0, split);
-    var sub = split === -1 ? "" : e.name.slice(split + 3);
-    var where = esc(formatTime(new Date(e.start))) + (shown.length ? " | " + esc(shown.join(" & ")) : "");
-    return '<div class="item">' + arrowSvg(arrow) +
-      '<div class="text"><div class="name">' + esc(main) + "</div>" +
-      (sub ? '<div class="sub">' + esc(sub) + "</div>" : "") +
-      '<div class="where">' + where + "</div></div></div>";
+    var n = splitName(e);
+    var rooms = e.custom ? "" : eventRooms(e);
+    var where = e.custom ? "" : esc(formatTime(new Date(e.start))) + (rooms ? " | " + esc(rooms) : "");
+    return '<div class="item">' + arrowSvg(eventArrow(e)) +
+      '<div class="text"><div class="name">' + esc(n.main) + "</div>" +
+      (n.sub ? '<div class="sub">' + esc(n.sub) + "</div>" : "") +
+      (where ? '<div class="where">' + where + "</div>" : "") + "</div></div>";
   }
 
   function layoutsFor(n) {
-    if (n <= 1) return [[1, 1]];
-    if (n === 2) return [[1, 2], [2, 1]];
-    if (n === 3) return [[1, 3], [2, 2]];
-    if (n === 4) return [[2, 2], [1, 4]];
-    if (n <= 6) return [[2, 3]];
-    if (n <= 8) return [[2, 4]];
-    return [[2, 5]];
+    var out = [[1, n]];
+    if (n > 1) out.push([2, Math.ceil(n / 2)]);
+    return out;
   }
 
-  function fits() {
-    var items = board.children;
+  function boardFits() {
+    var items = el.board.children;
     for (var i = 0; i < items.length; i++) {
       var it = items[i];
       if (it.scrollHeight > it.clientHeight + 1 || it.scrollWidth > it.clientWidth + 1) return false;
@@ -231,76 +478,114 @@ body {
     return true;
   }
 
-  // Try each layout, find the largest type that fits, keep the winner.
+  // Try one and two columns, find the largest type that fits, keep the winner.
   function fitBoard(n) {
-    var maxFs = Math.min(window.innerHeight * 0.15, window.innerWidth * 0.09);
+    var maxFs = Math.min(window.innerHeight * 0.15, window.innerWidth * 0.13);
     var best = { fs: 0, cols: 1, rows: 1 };
     layoutsFor(n).forEach(function (l) {
-      board.style.setProperty("--cols", l[0]);
-      board.style.setProperty("--rows", l[1]);
-      var lo = 14, hi = maxFs;
+      el.board.style.setProperty("--cols", l[0]);
+      el.board.style.setProperty("--rows", l[1]);
+      var lo = 12, hi = maxFs;
       for (var k = 0; k < 14; k++) {
         var mid = (lo + hi) / 2;
-        board.style.setProperty("--fs", mid + "px");
-        if (fits()) lo = mid; else hi = mid;
+        el.board.style.setProperty("--fs", mid + "px");
+        if (boardFits()) lo = mid; else hi = mid;
       }
       if (lo > best.fs) best = { fs: lo, cols: l[0], rows: l[1] };
     });
-    board.style.setProperty("--cols", best.cols);
-    board.style.setProperty("--rows", best.rows);
-    board.style.setProperty("--fs", Math.floor(best.fs) + "px");
+    el.board.style.setProperty("--cols", best.cols);
+    el.board.style.setProperty("--rows", best.rows);
+    el.board.style.setProperty("--fs", Math.floor(best.fs) + "px");
   }
 
-  function sampleEvents() {
-    var d = new Date();
-    function at(h, m) { var x = new Date(d); x.setHours(h, m, 0, 0); return x.toISOString(); }
-    return [
-      { name: "Living Waters", start: at(17, 30), end: at(23, 59), rooms: ["Hospitality Room"] },
-      { name: "Bread & Wine | Songsharing Night", start: at(18, 30), end: at(23, 59), rooms: ["Forest"] }
-    ];
-  }
-
-  function currentItems() {
-    if (mode === "key") {
-      var keys = [];
-      for (var i = 1; i <= 10; i++) keys.push({ keyItem: true, arrow: i, label: ARROWS[i].label });
-      return keys;
+  function fitDoor() {
+    var inner = el.door.firstChild;
+    if (!inner) return;
+    var maxFs = Math.min(window.innerHeight * 0.2, window.innerWidth * 0.16);
+    var lo = 12, hi = maxFs;
+    for (var k = 0; k < 14; k++) {
+      var mid = (lo + hi) / 2;
+      el.door.style.setProperty("--fs", mid + "px");
+      var ok = inner.offsetHeight <= el.door.clientHeight + 1 && inner.scrollWidth <= inner.clientWidth + 1 &&
+        inner.offsetWidth <= el.door.clientWidth + 1;
+      if (ok) lo = mid; else hi = mid;
     }
-    var list = mode === "sample" ? sampleEvents() : (data && data.events) || [];
-    var now = Date.now();
-    return list
-      .filter(function (e) { return e && e.name && Date.parse(e.end) > now; })
-      .sort(function (a, b) { return (Date.parse(a.start) - Date.parse(b.start)) || a.name.localeCompare(b.name); });
+    el.door.style.setProperty("--fs", Math.floor(lo) + "px");
   }
 
-  function showPage() {
+  function drawDoor(list) {
+    var label = THEME.markText || "";
+    var room = roomDisplay(opts.room);
+    var cur = list[0], next = list[1];
+    var html = '<div class="door-inner">';
+    if (cur) {
+      var n = splitName(cur);
+      if (!label) label = room;
+      html += '<div class="door-label">' + esc(label) + "</div>" +
+        '<div class="door-name">' + esc(n.main) + "</div>" +
+        (n.sub ? '<div class="door-sub">' + esc(n.sub) + "</div>" : "") +
+        (cur.custom ? "" : '<div class="door-time">' + esc(formatRange(new Date(cur.start), new Date(cur.end))) + "</div>") +
+        (next && !next.custom ? '<div class="door-next">Up Next: ' + esc(splitName(next).main) + ", " + esc(formatTime(new Date(next.start))) + "</div>" : "");
+    } else {
+      // Nothing left today in this room: the sign labels the room.
+      html += (label ? '<div class="door-label">' + esc(label) + "</div>" : "") + '<div class="door-name">' + esc(room) + "</div>";
+    }
+    el.door.innerHTML = html + "</div>";
+    // The host's name moves above the event name, like a printed door sign.
+    el.markText.hidden = !THEME.markText || label === THEME.markText;
+    fitDoor();
+  }
+
+  function draw() {
+    if (view === "door") return;
     var page = pages[pageIndex] || [];
-    board.innerHTML = page.map(itemHtml).join("");
+    el.board.innerHTML = page.map(itemHtml).join("");
     if (page.length) fitBoard(page.length);
   }
 
   function render() {
-    var items = currentItems();
+    if (pickTheme() !== THEME_KEY) applyTheme(pickTheme());
+    var items;
+    if (mode === "key") {
+      items = [];
+      for (var i = 1; i <= 10; i++) items.push({ keyItem: true, arrow: i, label: ARROWS[i].label });
+    } else {
+      items = upcoming();
+    }
+    el.door.hidden = view !== "door";
+    if (view === "door") {
+      el.board.hidden = true;
+      el.welcome.hidden = true;
+      drawDoor(items);
+      updateStatus();
+      return;
+    }
     var per = mode === "key" ? 10 : PER_PAGE;
-    welcome.hidden = items.length > 0;
-    board.hidden = items.length === 0;
+    el.welcome.hidden = items.length > 0;
+    el.board.hidden = items.length === 0;
     pages = [];
-    for (var i = 0; i < items.length; i += per) pages.push(items.slice(i, i + per));
+    for (var j = 0; j < items.length; j += per) pages.push(items.slice(j, j + per));
     if (pageIndex >= pages.length) pageIndex = 0;
-    showPage();
+    draw();
     updateStatus();
   }
+  // Door signs redraw on resize too.
+  function redraw() { if (view === "door") render(); else draw(); }
 
   // A quiet line in the corner only when something needs attention.
   function updateStatus() {
     var msg = "";
-    if (mode === "key" || mode === "sample") msg = mode === "key" ? "Arrow Key" : "Sample events";
+    if (mode === "key") msg = "Arrow Key";
+    else if (mode === "sample") msg = "Sample events";
+    else if (customTitle) msg = "";
     else if (!CFG.dataUrl) msg = "Add the Apps Script address to config.js";
     else if (!lastGood) msg = "Connecting to Planning Center";
     else if (Date.now() - lastGood > STALE_MINUTES * 60000) msg = "Can't reach Planning Center. Showing the update from " + formatTime(new Date(lastGood)) + ".";
-    statusEl.hidden = !msg;
-    statusEl.textContent = msg;
+    el.status.hidden = !msg;
+    el.status.textContent = msg;
   }
+
+  /* ---------- Planning Center ---------- */
 
   function save(d) { try { localStorage.setItem(STORE_KEY, JSON.stringify({ at: Date.now(), data: d })); } catch (err) {} }
   function restore() {
@@ -311,10 +596,9 @@ body {
   }
 
   function load() {
-    if (!CFG.dataUrl || mode === "key" || mode === "sample") { render(); return; }
+    if (!CFG.dataUrl || mode || customTitle) { render(); return; }
     var xhr = new XMLHttpRequest();
-    var url = CFG.dataUrl + (CFG.dataUrl.indexOf("?") === -1 ? "?" : "&") + "t=" + Date.now();
-    xhr.open("GET", url, true);
+    xhr.open("GET", CFG.dataUrl + (CFG.dataUrl.indexOf("?") === -1 ? "?" : "&") + "t=" + Date.now(), true);
     xhr.timeout = 30000;
     xhr.onload = function () {
       try {
@@ -327,41 +611,78 @@ body {
     xhr.send();
   }
 
-  // Pressing OK on the TV remote asks the browser for full screen.
+  /* ---------- Staying current ---------- */
+
+  // Every screen picks up changes to config.js within a few minutes, and reloads itself when the sign changes.
+  function refreshConfig() {
+    get("config.js", function (t) {
+      if (!t || t === configText) return;
+      var holder = {};
+      try { (new Function("window", t))(holder); } catch (err) { return; }
+      if (!holder.LOBBY_SIGN) return;
+      var changed = configText !== null || JSON.stringify(holder.LOBBY_SIGN) !== JSON.stringify(CFG);
+      var urlChanged = holder.LOBBY_SIGN.dataUrl !== CFG.dataUrl;
+      configText = t;
+      if (!changed) return;
+      useConfig(holder.LOBBY_SIGN);
+      if (urlChanged) load(); else render();
+    });
+  }
+  function reloadFresh() {
+    var last = parseInt(opts._r, 10);
+    if (last && Date.now() - last < 10 * 60000) return; // never reload in a loop
+    var q = (location.search || "").replace(/^\?/, "").split("&").filter(function (p) { return p && p.indexOf("_r=") !== 0; });
+    q.push("_r=" + Date.now());
+    location.replace(location.pathname + "?" + q.join("&") + (location.hash || ""));
+  }
+  function checkForUpdate() {
+    refreshConfig();
+    get("index.html", function (t) {
+      if (t && (t.indexOf(appSource) === -1 || t.indexOf(cssSource) === -1)) reloadFresh();
+    });
+  }
+
+  /* ---------- Screen behavior ---------- */
+
+  // Tapping the screen, or OK on the TV remote, asks the browser for full screen.
   function goFullscreen() {
-    var el = document.documentElement;
-    var req = el.requestFullscreen || el.webkitRequestFullscreen;
+    var d = document.documentElement;
+    var req = d.requestFullscreen || d.webkitRequestFullscreen;
     if (req && !(document.fullscreenElement || document.webkitFullscreenElement)) {
-      try { var p = req.call(el); if (p && p.catch) p.catch(function () {}); } catch (err) {}
+      try { var p = req.call(d); if (p && p.catch) p.catch(function () {}); } catch (err) {}
     }
   }
   document.addEventListener("click", goFullscreen);
   document.addEventListener("keydown", function (ev) { if (ev.keyCode === 13) goFullscreen(); });
 
-  window.addEventListener("hashchange", function () { mode = readMode(); pageIndex = 0; load(); });
   var resizeTimer;
-  window.addEventListener("resize", function () { clearTimeout(resizeTimer); resizeTimer = setTimeout(showPage, 150); });
+  window.addEventListener("resize", function () { clearTimeout(resizeTimer); resizeTimer = setTimeout(redraw, 150); });
 
   setInterval(function () {
-    if (pages.length < 2) return;
+    if (view === "door" || pages.length < 2) return;
     pageIndex = (pageIndex + 1) % pages.length;
-    showPage();
+    draw();
   }, PAGE_SECONDS * 1000);
   setInterval(render, 30000);
   setInterval(load, Math.max(1, CFG.refreshMinutes || 2) * 60000);
+  setInterval(checkForUpdate, CHECK_MINUTES * 60000);
 
-  // Reload the whole page once a night so the TV picks up any changes to the sign itself.
+  // Reload once a night so every screen starts the day fresh.
   var loadedAt = Date.now();
   setInterval(function () {
-    var h;
-    try { h = Number(new Intl.DateTimeFormat("en-US", { timeZone: TIME_ZONE, hour: "numeric", hour12: false }).format(new Date())) % 24; }
-    catch (err) { h = new Date().getHours(); }
-    if (h === 3 && Date.now() - loadedAt > 2 * 3600000) location.reload();
+    if (clock(new Date()).h === 3 && Date.now() - loadedAt > 2 * 3600000) { opts._r = ""; reloadFresh(); }
   }, 20 * 60000);
 
-  try { if (navigator.wakeLock && navigator.wakeLock.request) navigator.wakeLock.request("screen").catch(function () {}); } catch (err) {}
+  function keepAwake() {
+    try { if (navigator.wakeLock && navigator.wakeLock.request) navigator.wakeLock.request("screen").catch(function () {}); } catch (err) {}
+  }
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") keepAwake(); });
+  keepAwake();
 
+  useConfig(CFG);
   restore();
+  render();
+  refreshConfig();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(load); else load();
 })();
 </script>
