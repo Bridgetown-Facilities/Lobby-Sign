@@ -101,6 +101,7 @@ body {
   white-space: nowrap;
 }
 .arrow-above .where { margin-top: 0.3em; }
+.away { margin-top: 0.14em; font-size: 0.5em; line-height: 1.2; color: var(--detail); font-weight: var(--detail-weight); }
 
 /* Door sign */
 .door {
@@ -117,6 +118,7 @@ body {
 .door-name { line-height: 1.06; letter-spacing: -0.005em; text-wrap: balance; }
 .door-sub { margin-top: 0.15em; font-size: 0.5em; line-height: 1.15; color: var(--detail); font-weight: var(--detail-weight); }
 .door-time { margin-top: 0.55em; font-size: 0.4em; color: var(--detail); font-weight: var(--detail-weight); }
+.door-away { margin-top: 0.4em; font-size: 0.3em; line-height: 1.25; color: var(--detail); font-weight: var(--detail-weight); }
 .door-next { margin-top: 1.6em; font-size: 0.24em; color: var(--quiet); font-weight: var(--detail-weight); }
 
 /* Nothing left today */
@@ -167,6 +169,8 @@ body {
 
   // Arrow numbers from config.js. Straight arrows are one shape rotated; turn arrows have their own path.
   var STRAIGHT = "M8 50 H90 M60 20 L90 50 L60 80";
+  // Rooms in another building get a map pin instead of an arrow.
+  var PIN = "M50 94 C50 94 19 61 19 39 C19 21 33 7 50 7 C67 7 81 21 81 39 C81 61 50 94 50 94 Z M50 28 A11 11 0 1 0 50.01 28";
   var ARROWS = {
     1: { label: "Straight Ahead", angle: 270 },
     2: { label: "Ahead Left", angle: 225 },
@@ -398,6 +402,14 @@ body {
     var n = cleanName(e.name), i = n.indexOf(" | ");
     return i === -1 ? { main: n, sub: "" } : { main: n.slice(0, i), sub: n.slice(i + 3) };
   }
+  function eventBuilding(e) {
+    var b = null, all = CFG.buildings || {};
+    (e.rooms || []).forEach(function (r) {
+      var info = roomInfo(r);
+      if (!b && info && info.building && all[info.building]) b = all[info.building];
+    });
+    return b;
+  }
   function eventArrow(e) {
     if (arrowOverride !== null) return arrowOverride;
     var a = null;
@@ -405,7 +417,13 @@ body {
       var info = roomInfo(r);
       if (a === null && info && info.arrow) a = info.arrow;
     });
+    if (a === null && eventBuilding(e)) a = "pin";
     return a;
+  }
+  function awayLines(b) {
+    if (!b) return [];
+    var second = [b.address, b.directions].filter(Boolean).join(", ");
+    return [b.name, second].filter(Boolean);
   }
   function eventRooms(e) {
     var shown = [];
@@ -422,7 +440,8 @@ body {
     return [
       { name: "Living Waters", start: at(-15), end: at(75), rooms: ["Hospitality Room"] },
       { name: "Bread & Wine | Songsharing Night", start: at(30), end: at(120), rooms: ["Forest"] },
-      { name: "Prayer Night", start: at(135), end: at(210), rooms: ["Forest"] }
+      { name: "Prayer Night", start: at(135), end: at(210), rooms: ["Forest"] },
+      { name: "Covenant Community Course", start: at(45), end: at(180), rooms: ["Balcony"] }
     ];
   }
 
@@ -441,6 +460,10 @@ body {
   /* ---------- Drawing ---------- */
 
   function arrowSvg(num) {
+    if (num === "pin") {
+      return '<svg class="arrow" viewBox="0 0 100 100" aria-hidden="true"><path d="' + PIN +
+        '" fill="none" stroke="currentColor" stroke-width="' + (THEME.arrowWeight || 9) + '" stroke-linejoin="round"/></svg>';
+    }
     var a = ARROWS[num];
     if (!a) return THEME.arrowAbove ? "" : '<span class="arrow" aria-hidden="true"></span>';
     var turn = a.path ? "" : ' transform="rotate(' + a.angle + ' 50 50)"';
@@ -460,7 +483,9 @@ body {
     return '<div class="item">' + arrowSvg(eventArrow(e)) +
       '<div class="text"><div class="name">' + esc(n.main) + "</div>" +
       (n.sub ? '<div class="sub">' + esc(n.sub) + "</div>" : "") +
-      (where ? '<div class="where">' + where + "</div>" : "") + "</div></div>";
+      (where ? '<div class="where">' + where + "</div>" : "") +
+      (e.custom ? "" : awayLines(eventBuilding(e)).map(function (l) { return '<div class="away">' + esc(l) + "</div>"; }).join("")) +
+      "</div></div>";
   }
 
   function layoutsFor(n) {
@@ -525,6 +550,7 @@ body {
         '<div class="door-name">' + esc(n.main) + "</div>" +
         (n.sub ? '<div class="door-sub">' + esc(n.sub) + "</div>" : "") +
         (cur.custom ? "" : '<div class="door-time">' + esc(formatRange(new Date(cur.start), new Date(cur.end))) + "</div>") +
+        (cur.custom ? "" : awayLines(eventBuilding(cur)).map(function (l) { return '<div class="door-away">' + esc(l) + "</div>"; }).join("")) +
         (next && !next.custom ? '<div class="door-next">Up Next: ' + esc(splitName(next).main) + ", " + esc(formatTime(new Date(next.start))) + "</div>" : "");
     } else {
       // Nothing left today in this room: the sign labels the room.

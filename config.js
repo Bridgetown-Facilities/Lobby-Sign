@@ -14,6 +14,7 @@ window.LOBBY_SIGN = {
   // These point the way from the main entrance, where the lobby TV sits.
   // "room" must match the room name in Planning Center (capitals, periods and apostrophes don't matter).
   // "show" is optional: a different name for the sign.
+  // "building" marks a room in another building: the sign shows a map pin and where to go instead of an arrow.
   rooms: [
     { room: "Auditorium", arrow: 5 },
     { room: "Collaboration Room", arrow: 1 },
@@ -33,8 +34,15 @@ window.LOBBY_SIGN = {
     { room: "Mt. Tabor", arrow: 8 },
     { room: "Overlook", arrow: 8 },
     { room: "St. Johns", arrow: 8 },
-    { room: "Steel", arrow: 8 }
+    { room: "Steel", arrow: 8 },
+    { room: "Balcony", building: "phil" },
+    { room: "Large classroom (basement)", show: "Large Classroom (Basement)", building: "phil" }
   ],
+
+  // Other buildings we use. "directions" reads from Bridgetown, on the corner of NE 21st Ave & Tillamook.
+  buildings: {
+    phil: { name: "Portland Youth Philharmonic", address: "1820 NE 21st Ave", directions: "one block south" }
+  },
 
   // Which look a sign uses when its address doesn't name one.
   // List a date to switch every screen for that day; the day after, they go back to the default.

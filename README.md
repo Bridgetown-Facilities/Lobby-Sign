@@ -50,6 +50,10 @@ Edit `config.js`. Each room has an arrow number (pointing from the main entrance
 | 9 | Down Right |
 | 10 | Down |
 
+## Rooms in other buildings
+
+A room marked with a `building` in `config.js` (the Balcony and Large Classroom at Portland Youth Philharmonic, 1820 NE 21st Ave) shows a map pin instead of an arrow, with the building's name, address, and directions from Bridgetown underneath.
+
 ## Staying current
 
 Each screen checks Planning Center every 2 minutes. It checks this repository every 5 minutes: a change to `config.js` shows up without a reload, and a change to the sign itself makes the screen reload. Every screen also reloads once a night.
