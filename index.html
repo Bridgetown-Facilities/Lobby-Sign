@@ -40,7 +40,9 @@
 html, body { height: 100%; }
 body {
   margin: 0;
+  background: #000000;
   background: var(--bg);
+  color: #FFFFFF;
   color: var(--text);
   font-family: var(--font);
   font-weight: var(--name-weight);
@@ -89,6 +91,13 @@ body {
 .arrow-above .item, .no-arrows .item { display: block; }
 .arrow-above .arrow { width: 1.25em; height: 1.25em; margin: 0 0 0.32em -0.04em; }
 .no-arrows .arrow { display: none; }
+/* Browsers without CSS Grid (an iPad 2 on iOS 9): the script places each event itself. */
+.no-grid .board { display: block; position: relative; }
+.no-grid .board > .item { position: absolute; }
+.no-grid .item { display: -webkit-flex; display: flex; -webkit-align-items: flex-start; align-items: flex-start; }
+.no-grid .item > .arrow { -webkit-flex: none; flex: none; margin-right: 0.28em; }
+.no-grid .item > .text { -webkit-flex: 1 1 auto; flex: 1 1 auto; min-width: 0; }
+.no-grid .arrow-above .item, .no-grid .no-arrows .item { display: block; }
 .text { min-width: 0; }
 .name { line-height: 1.06; letter-spacing: -0.005em; text-wrap: balance; }
 .sub { margin-top: 0.12em; font-size: 0.6em; line-height: 1.15; color: var(--detail); font-weight: var(--detail-weight); }
@@ -168,7 +177,7 @@ body {
   var STORE_KEY = "lobbySign.lastData";
 
   // Arrow numbers from config.js. Straight arrows are one shape rotated; turn arrows have their own path.
-  var STRAIGHT = "M8 50 H90 M60 20 L90 50 L60 80";
+  var STRAIGHT = "M8 50 H84 M60 20 L90 50 L60 80";
   // Rooms in another building get a map pin instead of an arrow.
   var PIN = "M50 94 C50 94 19 61 19 39 C19 21 33 7 50 7 C67 7 81 21 81 39 C81 61 50 94 50 94 Z M50 28 A11 11 0 1 0 50.01 28";
   var ARROWS = {
@@ -177,8 +186,8 @@ body {
     3: { label: "Ahead Right", angle: 315 },
     4: { label: "Left", angle: 180 },
     5: { label: "Right", angle: 0 },
-    6: { label: "Ahead, Then Left", path: "M70 94 V32 H12 M38 6 L12 32 L38 58" },
-    7: { label: "Ahead, Then Right", path: "M30 94 V32 H88 M62 6 L88 32 L62 58" },
+    6: { label: "Ahead, Then Left", path: "M70 94 V32 H18 M38 6 L12 32 L38 58" },
+    7: { label: "Ahead, Then Right", path: "M30 94 V32 H82 M62 6 L88 32 L62 58" },
     8: { label: "Down Left", angle: 135 },
     9: { label: "Down Right", angle: 45 },
     10: { label: "Down", angle: 90 }
@@ -202,6 +211,8 @@ body {
   var roomsFilter = (opts.rooms || "").split(",").map(trim).filter(Boolean);
   var customTitle = trim(opts.title || "");
   var arrowOverride = readArrow(opts.arrow);
+  var GRID = !has("nogrid") && !!(window.CSS && CSS.supports && CSS.supports("display", "grid"));
+  if (!GRID) document.documentElement.className += " no-grid";
 
   var CFG = window.LOBBY_SIGN || { rooms: [], themes: {} };
   var configText = null;
@@ -503,6 +514,22 @@ body {
     return true;
   }
 
+  // Without CSS Grid, lay the events out in the same rows and columns by hand.
+  function placeItems(cols, rows) {
+    if (GRID) return;
+    var gx = window.innerWidth * 0.045, gy = window.innerHeight * 0.045;
+    var w = (el.board.clientWidth - gx * (cols - 1)) / cols;
+    var h = (el.board.clientHeight - gy * (rows - 1)) / rows;
+    var items = el.board.children;
+    for (var i = 0; i < items.length; i++) {
+      var st = items[i].style;
+      st.width = w + "px";
+      st.height = h + "px";
+      st.left = (i % cols) * (w + gx) + "px";
+      st.top = Math.floor(i / cols) * (h + gy) + "px";
+    }
+  }
+
   // Try one and two columns, find the largest type that fits, keep the winner.
   function fitBoard(n) {
     var maxFs = Math.min(window.innerHeight * 0.15, window.innerWidth * 0.13);
@@ -510,6 +537,7 @@ body {
     layoutsFor(n).forEach(function (l) {
       el.board.style.setProperty("--cols", l[0]);
       el.board.style.setProperty("--rows", l[1]);
+      placeItems(l[0], l[1]);
       var lo = 12, hi = maxFs;
       for (var k = 0; k < 14; k++) {
         var mid = (lo + hi) / 2;
@@ -520,6 +548,7 @@ body {
     });
     el.board.style.setProperty("--cols", best.cols);
     el.board.style.setProperty("--rows", best.rows);
+    placeItems(best.cols, best.rows);
     el.board.style.setProperty("--fs", Math.floor(best.fs) + "px");
   }
 
@@ -621,19 +650,46 @@ body {
     } catch (err) {}
   }
 
+  var useScriptTag = false;
+  function gotData(d) {
+    if (!d || !d.events) return false;
+    data = d;
+    lastGood = Date.now();
+    save(d);
+    return true;
+  }
+
+  // Old Safari (iOS 9 and earlier) won't follow the redirect Apps Script answers with, so it fetches the feed
+  // as a script instead (Code.gs answers ?callback= requests). Once that works, the screen keeps using it.
+  function loadByScriptTag() {
+    var name = "lobbySignFeed" + Date.now(), tag = document.createElement("script"), finished = false;
+    function finish(d) {
+      if (finished) return;
+      finished = true;
+      try { delete window[name]; } catch (err) { window[name] = undefined; }
+      if (tag.parentNode) tag.parentNode.removeChild(tag);
+      useScriptTag = gotData(d);
+      render();
+    }
+    window[name] = finish;
+    tag.onerror = function () { finish(null); };
+    setTimeout(function () { finish(null); }, 30000);
+    tag.src = CFG.dataUrl + (CFG.dataUrl.indexOf("?") === -1 ? "?" : "&") + "callback=" + name + "&t=" + Date.now();
+    document.body.appendChild(tag);
+  }
+
   function load() {
     if (!CFG.dataUrl || mode || customTitle) { render(); return; }
+    if (useScriptTag) { loadByScriptTag(); return; }
     var xhr = new XMLHttpRequest();
     xhr.open("GET", CFG.dataUrl + (CFG.dataUrl.indexOf("?") === -1 ? "?" : "&") + "t=" + Date.now(), true);
     xhr.timeout = 30000;
     xhr.onload = function () {
-      try {
-        var d = JSON.parse(xhr.responseText);
-        if (d && d.events) { data = d; lastGood = Date.now(); save(d); }
-      } catch (err) {}
-      render();
+      var ok = false;
+      try { ok = gotData(JSON.parse(xhr.responseText)); } catch (err) {}
+      if (ok) render(); else loadByScriptTag();
     };
-    xhr.onerror = xhr.ontimeout = function () { render(); };
+    xhr.onerror = xhr.ontimeout = function () { loadByScriptTag(); };
     xhr.send();
   }
 

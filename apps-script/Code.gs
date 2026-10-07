@@ -54,7 +54,7 @@ function checkSetup() {
 }
 
 /** The web app the TV reads. */
-function doGet() {
+function doGet(e) {
   var cache = CacheService.getScriptCache();
   var json = cache.get('feed');
   if (!json) {
@@ -65,6 +65,11 @@ function doGet() {
       // The TV keeps showing its last good update when it gets an error.
       json = JSON.stringify({ error: String(err && err.message || err), events: null });
     }
+  }
+  // Old iPads (iOS 9) can't read this feed directly, so they ask for it wrapped in a callback.
+  var callback = e && e.parameter && e.parameter.callback;
+  if (callback && /^[A-Za-z_$][0-9A-Za-z_$]{0,63}$/.test(callback)) {
+    return ContentService.createTextOutput(callback + '(' + json + ');').setMimeType(ContentService.MimeType.JAVASCRIPT);
   }
   return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
 }
