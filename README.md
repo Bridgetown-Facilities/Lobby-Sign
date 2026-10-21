@@ -54,6 +54,8 @@ Edit `config.js`. Each room has an arrow number (pointing from the main entrance
 
 A room marked with a `building` in `config.js` (the Balcony and Large Classroom at Portland Youth Philharmonic, 1820 NE 21st Ave) shows a map pin instead of an arrow, with the building's name, address, and directions from Bridgetown underneath.
 
+Places in the **OFFSITE** room folder in Planning Center (Steeplejack, 2400 NE Broadway, and any others) work the same way. Planning Center doesn't hand the sign an address, so each new place needs two small additions to `config.js`: a line in `rooms` whose `room` matches the room's name in Planning Center, and a line in `buildings` with its name and address (`directions` is optional). Until a place is added, an event booked there shows the room name with no arrow or pin.
+
 ## Staying current
 
 Each screen checks Planning Center every 2 minutes. It checks this repository every 5 minutes: a change to `config.js` shows up without a reload, and a change to the sign itself makes the screen reload. Every screen also reloads once a night.

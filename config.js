@@ -36,12 +36,15 @@ window.LOBBY_SIGN = {
     { room: "St. Johns", arrow: 8 },
     { room: "Steel", arrow: 8 },
     { room: "Balcony", building: "phil" },
-    { room: "Large classroom (basement)", show: "Large Classroom (Basement)", building: "phil" }
+    { room: "Large classroom (basement)", show: "Large Classroom (Basement)", building: "phil" },
+    // Rooms in the OFFSITE folder in Planning Center. Add one line here and one in "buildings" for each new place.
+    { room: "Steeplejack", building: "steeplejack" }
   ],
 
-  // Other buildings we use. "directions" reads from Bridgetown, on the corner of NE 21st Ave & Tillamook.
+  // Other buildings we use. "directions" is optional and reads from Bridgetown, on the corner of NE 21st Ave & Tillamook.
   buildings: {
-    phil: { name: "Portland Youth Philharmonic", address: "1820 NE 21st Ave", directions: "one block south" }
+    phil: { name: "Portland Youth Philharmonic", address: "1820 NE 21st Ave", directions: "one block south" },
+    steeplejack: { name: "Steeplejack", address: "2400 NE Broadway" }
   },
 
   // Which look a sign uses when its address doesn't name one.
