@@ -431,10 +431,21 @@ body {
     if (a === null && eventBuilding(e)) a = "pin";
     return a;
   }
-  function awayLines(b) {
+  // For a room in another building, the time line names the building (PYP), and the line under it
+  // gives the room and the address. A room named the same as the building (Steeplejack) isn't repeated.
+  function buildingLabel(b) { return b.short || b.name; }
+  function awayLines(e) {
+    var b = eventBuilding(e);
     if (!b) return [];
-    var second = [b.address, b.directions].filter(Boolean).join(", ");
-    return [b.name, second].filter(Boolean);
+    var rooms = eventRooms(e).split(" & ").filter(function (r) {
+      return r && norm(r) !== norm(buildingLabel(b)) && norm(r) !== norm(b.name);
+    });
+    var line = rooms.concat(b.address ? [b.address] : []).join(", ");
+    return line ? [line] : [];
+  }
+  function eventWhere(e) {
+    var b = eventBuilding(e);
+    return b ? buildingLabel(b) : eventRooms(e);
   }
   function eventRooms(e) {
     var shown = [];
@@ -489,13 +500,13 @@ body {
         '</div><div class="where">Arrow ' + e.arrow + "</div></div></div>";
     }
     var n = splitName(e);
-    var rooms = e.custom ? "" : eventRooms(e);
+    var rooms = e.custom ? "" : eventWhere(e);
     var where = e.custom ? "" : esc(formatTime(new Date(e.start))) + (rooms ? " | " + esc(rooms) : "");
     return '<div class="item">' + arrowSvg(eventArrow(e)) +
       '<div class="text"><div class="name">' + esc(n.main) + "</div>" +
       (n.sub ? '<div class="sub">' + esc(n.sub) + "</div>" : "") +
       (where ? '<div class="where">' + where + "</div>" : "") +
-      (e.custom ? "" : awayLines(eventBuilding(e)).map(function (l) { return '<div class="away">' + esc(l) + "</div>"; }).join("")) +
+      (e.custom ? "" : awayLines(e).map(function (l) { return '<div class="away">' + esc(l) + "</div>"; }).join("")) +
       "</div></div>";
   }
 
@@ -579,7 +590,7 @@ body {
         '<div class="door-name">' + esc(n.main) + "</div>" +
         (n.sub ? '<div class="door-sub">' + esc(n.sub) + "</div>" : "") +
         (cur.custom ? "" : '<div class="door-time">' + esc(formatRange(new Date(cur.start), new Date(cur.end))) + "</div>") +
-        (cur.custom ? "" : awayLines(eventBuilding(cur)).map(function (l) { return '<div class="door-away">' + esc(l) + "</div>"; }).join("")) +
+        (cur.custom ? "" : awayLines(cur).map(function (l) { return '<div class="door-away">' + esc(l) + "</div>"; }).join("")) +
         (next && !next.custom ? '<div class="door-next">Up Next: ' + esc(splitName(next).main) + ", " + esc(formatTime(new Date(next.start))) + "</div>" : "");
     } else {
       // Nothing left today in this room: the sign labels the room.
