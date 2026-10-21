@@ -93,6 +93,19 @@ function buildFeed_() {
   var tagged = filterTagged_(instances, tagId);
   var rooms = getRooms_();
 
+  // A booking for a room we haven't heard of means the room list is stale (a room was just added in
+  // Planning Center). Re-read the list once instead of waiting out the cache.
+  var unknown = res.included.some(function (inc) {
+    if (inc.type !== 'ResourceBooking') return false;
+    var rel = inc.relationships || {};
+    var resId = rel.resource && rel.resource.data && rel.resource.data.id;
+    return resId && !rooms[resId];
+  });
+  if (unknown) {
+    CacheService.getScriptCache().remove('rooms');
+    rooms = getRooms_();
+  }
+
   // Room bookings, grouped by event instance.
   var bookingsByInstance = {};
   res.included.forEach(function (inc) {
