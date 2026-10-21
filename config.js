@@ -41,9 +41,10 @@ window.LOBBY_SIGN = {
     { room: "Steeplejack", building: "steeplejack" }
   ],
 
-  // Other buildings we use. "directions" is optional and reads from Bridgetown, on the corner of NE 21st Ave & Tillamook.
+  // Other buildings we use. "short" is the name that goes next to the time (it defaults to "name").
+  // The line under it shows the room (unless the room is named like the building) and the address.
   buildings: {
-    phil: { name: "Portland Youth Philharmonic", address: "1820 NE 21st Ave", directions: "one block south" },
+    phil: { name: "Portland Youth Philharmonic", short: "PYP", address: "1820 NE 21st Ave" },
     steeplejack: { name: "Steeplejack", address: "2400 NE Broadway" }
   },
 
