@@ -5,8 +5,16 @@ window.LOBBY_SIGN = {
   // It only hands out today's events tagged "Lobby Sign", so it is not a secret.
   dataUrl: "https://script.google.com/macros/s/AKfycbxmEiZZVnqcyYw3s79GmRrmNPIgtbVEmlTjZqAslVK8w4-fivuQPkLzGyN-e4felwZa/exec",
 
-  // How often each screen checks Planning Center for changes.
-  refreshMinutes: 2,
+  // How often each screen checks Planning Center for changes, in seconds (10 or more).
+  refreshSeconds: 30,
+
+  // When an event is on the Lobby and Hallway signs. It appears this many minutes before its start time
+  // and comes off this many minutes after its start time, even if it is still going. It also comes off
+  // when it ends, if that is sooner. Both use the event's public start time, never setup.
+  // Door signs ignore these: they keep showing what is in the room now and what is next.
+  // To turn a limit off, use a big number like 1440 (a full day).
+  showMinutesBefore: 90,
+  hideMinutesAfterStart: 90,
 
   // Arrow numbers match the Arrow Key (add ?key to the end of the sign's address to see it):
   //  1 Straight Ahead    2 Ahead Left    3 Ahead Right    4 Left    5 Right
