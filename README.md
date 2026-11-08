@@ -1,12 +1,20 @@
 # Lobby Sign
 
-Live wayfinding signs for Bridgetown Church, on the lobby TV and on iPads around the building. They show today's Planning Center Calendar events tagged **Lobby Sign**, each with its start time, room, and an arrow pointing the way. Events drop off when they end.
+Live wayfinding signs for Bridgetown Church, on the lobby TV and on iPads around the building. They show today's Planning Center Calendar events tagged **Lobby Sign**, each with its start time, room, and an arrow pointing the way. An event shows up 90 minutes before it starts and comes off 90 minutes after it starts, or when it ends if that is sooner.
 
 Everything here is free: GitHub Pages hosts the signs, and a Google Apps Script under the Bridgetown Google account reads Planning Center.
 
 ## Putting an event on the signs
 
 Add the **Lobby Sign** tag (tag group: Signage) to the event in Planning Center Calendar. That's the only filter. The signs show the event's public time, never setup or teardown.
+
+## When an event shows up
+
+The Lobby and Hallway signs only show an event from 90 minutes before its start time until 90 minutes after its start time, or until it ends, whichever comes first. So a 5 PM event stays off the sign until 3:30 PM, and a 2 PM event that runs until 5 PM comes off at 3:30 PM, because by then most people who are coming have arrived. The start time used is the one printed next to the event on the sign, never setup. When nothing is in its window, the sign shows the welcome message.
+
+Door signs don't use this window: they always show what's in the room now and what's next.
+
+To change it, edit `showMinutesBefore` and `hideMinutesAfterStart` in `config.js`. Screens pick up the change within 5 minutes, without a reload. A big number like 1440 turns a limit off.
 
 ## Setting up a screen
 
@@ -60,7 +68,7 @@ When you add a room in Planning Center, run `checkSetup` in the Apps Script so i
 
 ## Staying current
 
-Each screen checks Planning Center every 2 minutes. It checks this repository every 5 minutes: a change to `config.js` shows up without a reload, and a change to the sign itself makes the screen reload. Every screen also reloads once a night.
+Each screen checks Planning Center every 30 seconds (`refreshSeconds` in `config.js`). The Apps Script holds each answer for 1 minute and shares it with every screen, so a change in Planning Center usually reaches the signs within a minute or two, and adding screens doesn't multiply the calls to Planning Center. Events appear and drop off on time even between checks, because each screen works that out from its own clock every 30 seconds. It checks this repository every 5 minutes: a change to `config.js` shows up without a reload, and a change to the sign itself makes the screen reload. Every screen also reloads once a night.
 
 ## How it fits together
 

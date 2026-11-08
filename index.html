@@ -461,10 +461,21 @@ body {
     function at(offset) { return new Date(now + offset * min).toISOString(); }
     return [
       { name: "Living Waters", start: at(-15), end: at(75), rooms: ["Hospitality Room"] },
-      { name: "Bread & Wine | Songsharing Night", start: at(30), end: at(120), rooms: ["Forest"] },
-      { name: "Prayer Night", start: at(135), end: at(210), rooms: ["Forest"] },
+      { name: "Bread & Wine | Songsharing Night", start: at(30), end: at(80), rooms: ["Forest"] },
+      { name: "Prayer Night", start: at(85), end: at(160), rooms: ["Forest"] },
       { name: "Covenant Community Course", start: at(45), end: at(180), rooms: ["Balcony"] }
     ];
+  }
+
+  // The Lobby and Hallway signs show an event from showMinutesBefore its start until hideMinutesAfterStart
+  // after its start (or until it ends, if that comes first), so a long event doesn't crowd out what's coming.
+  // Door signs skip this: they always show what's in the room now and what's next.
+  function minutesSetting(value, fallback) { return typeof value === "number" && value >= 0 ? value : fallback; }
+  function inShowWindow(e, now) {
+    var start = Date.parse(e.start);
+    if (isNaN(start)) return true;
+    return now >= start - minutesSetting(CFG.showMinutesBefore, 90) * 60000 &&
+      now < start + minutesSetting(CFG.hideMinutesAfterStart, 90) * 60000;
   }
 
   function upcoming() {
@@ -475,6 +486,7 @@ body {
       .filter(function (e) { return e && e.name && Date.parse(e.end) > now; })
       .sort(function (a, b) { return (Date.parse(a.start) - Date.parse(b.start)) || a.name.localeCompare(b.name); });
     if (view === "door") return list.filter(function (e) { return inRooms(e, [opts.room]); });
+    list = list.filter(function (e) { return inShowWindow(e, now); });
     if (roomsFilter.length) return list.filter(function (e) { return inRooms(e, roomsFilter); });
     return list;
   }
@@ -757,7 +769,14 @@ body {
     draw();
   }, PAGE_SECONDS * 1000);
   setInterval(render, 30000);
-  setInterval(load, Math.max(1, CFG.refreshMinutes || 2) * 60000);
+  // The wait before each check is read from config.js every time, so changing it needs no reload.
+  function refreshSeconds() {
+    var s = Number(CFG.refreshSeconds);
+    return s >= 10 ? s : 30;
+  }
+  (function loadAgain() {
+    setTimeout(function () { load(); loadAgain(); }, refreshSeconds() * 1000);
+  })();
   setInterval(checkForUpdate, CHECK_MINUTES * 60000);
 
   // Reload once a night so every screen starts the day fresh.
